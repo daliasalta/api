@@ -11,30 +11,37 @@ router.post("/", async (req, res) => {
       price,
       discount_price,
       purchase_price,
+      isFeatured,
       description,
-      stock,
-      img,
-      categories, // Cambiado a 'categories' en lugar de 'category_id'
+      hasSize,
+      categories,
+      variants,
     } = req.body;
 
     // Verificar si las categorías existen
-    const existingCategories = await CategoryModel.find({ _id: { $in: categories } });
+    const existingCategories = await CategoryModel.find({
+      _id: { $in: categories },
+    });
     if (existingCategories.length !== categories.length) {
-      return res.status(400).json({ error: "Una o más categorías no encontradas" });
+      return res
+        .status(400)
+        .json({ error: "Una o más categorías no encontradas" });
     }
 
-    // Obtener la información completa de cada categoría
-    const categoryDetails = existingCategories.map((category) => category.toObject());
+    const categoryDetails = existingCategories.map((category) =>
+      category.toObject()
+    );
 
     const newProduct = new ProductModel({
       product,
       price,
       discount_price,
       purchase_price,
+      isFeatured,
       description,
-      stock,
-      img,
-      categories: categoryDetails, // Cambiado a incluir la información completa de las categorías
+      hasSize,
+      categories: categoryDetails,
+      variants,
     });
 
     const savedProduct = await newProduct.save();

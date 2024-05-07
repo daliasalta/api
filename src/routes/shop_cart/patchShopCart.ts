@@ -2,7 +2,8 @@ import { Router } from "express";
 import ShopCartModel from "../../models/shop_cart.schema";
 // import { ProductInterface } from "../../interfaces/product.interface";
 import ProductModel from "../../models/product.schema";
-import { validateStock } from "../../utils/validateStock";
+import { validateStockShopCart } from "../../utils/validateStock";
+import { ProductInterface } from "../../interfaces/product.interface";
 
 const router = Router();
 
@@ -37,73 +38,153 @@ router.patch("/:shopcart_id", async (req, res) => {
       );
 
       res.status(200).send(shopCartToPatch);
-    } else if (oldStatus === "not_paid" && newStatusIsCanceledOrExpired) {
-      const updatedShopCart = await ShopCartModel.findByIdAndUpdate(
-        shopcart_id,
-        { status },
-        { new: true }
-      );
-
-      await Promise.allSettled(
-        shopCartProducts.map(async (product: any) => {
-          const updatedProduct = await ProductModel.findByIdAndUpdate(
-            product.product_id,
-            { $inc: { stock: product.quantity } },
-            { new: true }
-          );
-          console.log(updatedProduct);
-          return updatedProduct;
-        })
-      );
-      res.status(200).send(updatedShopCart);
     }
 
     // si oldStatusIsCanceledOrExpired  y quiero pasarlo a paid o delivered le mermo el stock a los productos correspondientes
     else if (oldStatusIsCanceledOrExpired && newStatusIsPaidOrIsDelivered) {
+      console.log("ifitems1", shopCartProducts);
       const matchProducts = await Promise.all(
         shopCartProducts.map(async (product: any) => {
-          const productDetails = await ProductModel.findById(
-            product?.product_id?._id
-          );
+          const productDetails: ProductInterface | null =
+            await ProductModel.findById(
+              product?.product_id?.length > 0
+                ? product?.product_id
+                : product?.product_id?._id
+            );
 
-          if (!productDetails) {
+          if (productDetails === undefined) {
             // Si no se encuentra un producto con el ID proporcionado, puedes manejarlo según tus necesidades
             return {
-              id: product.id,
+              id: product._id,
               product: product.product,
               error: "Producto no encontrado",
             };
           }
 
-          // Devolver los detalles del producto junto con la cantidad
-          return {
-            id: productDetails.id,
-            name: productDetails.product,
-            stock: productDetails.stock,
-          };
+          if (productDetails && productDetails.hasSize) {
+            const variantIndex = productDetails?.variants?.findIndex(
+              (variant: any) => variant.color === product.color
+            );
+            const sizeIndex = productDetails?.variants[
+              variantIndex
+              // @ts-ignore
+            ].sizes?.findIndex((size: any) => size.size === product.size);
+            return {
+              id: productDetails._id,
+              name: productDetails.product,
+              product_stock: Number(
+                // @ts-ignore
+                productDetails.variants[variantIndex].sizes[sizeIndex].stock
+              ),
+              customer_required_stock: product.quantity,
+              size: product.size,
+              color: product.color,
+            };
+          } else if (productDetails && !productDetails?.hasSize) {
+            const variantIndex = productDetails?.variants?.findIndex(
+              (variant: any) => variant.color === product.color
+            );
+            return {
+              id: productDetails._id,
+              name: productDetails.product,
+              product_stock: Number(
+                // @ts-ignore
+                productDetails.variants[variantIndex].stock
+              ),
+              customer_required_stock: product.quantity,
+              color: product.color,
+            };
+          }
         })
       );
 
-      const requiredProducts = shopCartProducts.map((product: any) => {
-        return {
-          id: product.product_id._id,
-          quantity: product.quantity,
-        };
-      });
+      const missingStock = validateStockShopCart(matchProducts);
 
-      const missingStock = validateStock(matchProducts, requiredProducts);
+      // console.log("missingstockl", missingStock);
 
       if (missingStock.length === 0) {
         await Promise.all(
-          shopCartProducts.map(async (productCart: any) => {
-            // const productId = productCart.product_id;
-            // const stock;
-            console.log("productCart", productCart);
-            const updatedProduct = await ProductModel.findByIdAndUpdate(
-              productCart.product_id,
-              { $inc: { stock: -productCart.quantity } }
-            );
-            return updatedProduct;
+          shopCartProducts.map(async (cartProduct: any) => {
+            const product: ProductInterface | null =
+              await ProductModel.findById(
+                cartProduct?.product_id?.length > 0
+                  ? cartProduct?.product_id
+                  : cartProduct?.product_id?._id
+              );
+
+            if (product) {
+              console.log("product missingStock === 0 ", product);
+              const colorVariant = (product.variants as any[]).find(
+                (variant: any) =>
+                  variant.color.toLowerCase() ===
+                  cartProduct.color.toLowerCase()
+              );
+
+              // Determinar si el producto tiene tallas (sizes) o no
+              if (product.hasSize && product.variants.length) {
+                console.log("colorVariant", colorVariant);
+                // @ts-ignore
+                if (colorVariant && Array.isArray(colorVariant.sizes)) {
+                  // @ts-ignore
+                  const sizeVariant = (colorVariant.sizes as any[]).find(
+                    (size: any) => size.size === cartProduct.size
+                  );
+                  console.log("sizeVariant", sizeVariant);
+
+                  if (sizeVariant) {
+                    const stockFieldPath = `variants.$[colorVariant].sizes.$[sizeVariant].stock`;
+
+                    // Actualizar el stock del producto
+                    await ProductModel.findByIdAndUpdate(
+                      cartProduct?.product_id?.length > 0
+                        ? cartProduct?.product_id
+                        : cartProduct?.product_id?._id,
+                      {
+                        $set: {
+                          [stockFieldPath]:
+                            sizeVariant.stock - cartProduct.quantity,
+                        },
+                      },
+                      {
+                        new: true,
+                        arrayFilters: [
+                          { "colorVariant.color": cartProduct.color },
+                          { "sizeVariant.size": cartProduct.size },
+                        ],
+                      }
+                    );
+                  } else {
+                    console.log(
+                      `El tamaño '${cartProduct.size}' no existe para el color '${cartProduct.color}' en el producto con ID '${cartProduct.product_id._id}'.`
+                    );
+                  }
+                }
+              } else if (!product.hasSize) {
+                if (colorVariant) {
+                  console.log("else if");
+                  const stockFieldPath = `variants.$[colorVariant].stock`;
+
+                  // Actualizar el stock del producto
+                  await ProductModel.findByIdAndUpdate(
+                    cartProduct?.product_id?.length > 0
+                      ? cartProduct?.product_id
+                      : cartProduct?.product_id?._id,
+                    {
+                      $set: {
+                        [stockFieldPath]:
+                          colorVariant.stock - cartProduct.quantity,
+                      },
+                    },
+                    {
+                      new: true,
+                      arrayFilters: [
+                        { "colorVariant.color": cartProduct.color },
+                      ],
+                    }
+                  );
+                }
+              }
+            }
           })
         );
 
@@ -146,22 +227,98 @@ router.patch("/:shopcart_id", async (req, res) => {
       }
     }
     // si oldStatusIsPaidOrDelivered y quiero cancelarlo le aumento el stock a los productos de este cart
-    else if (oldStatusIsPaidOrIsDelivered && newStatusIsCanceledOrExpired) {
+    else if (
+      (oldStatusIsPaidOrIsDelivered && newStatusIsCanceledOrExpired) ||
+      (oldStatus === "not_paid" && newStatusIsCanceledOrExpired)
+    ) {
       console.log(4);
+      console.log("ifitems2", shopCartProducts);
+      await Promise.all(
+        shopCartProducts.map(async (cartProduct: any) => {
+          console.log(cartProduct.product_id._id);
+          const product: ProductInterface | null = await ProductModel.findById(
+            cartProduct?.product_id?.length > 0
+              ? cartProduct?.product_id
+              : cartProduct?.product_id?._id
+          );
+          console.log(product);
+          if (product) {
+            console.log("there are product");
+            const colorVariant = (product.variants as any[]).find(
+              (variant: any) =>
+                variant.color.toLowerCase() === cartProduct.color.toLowerCase()
+            );
+
+            // Determinar si el producto tiene tallas (sizes) o no
+            if (product.hasSize) {
+              console.log("colorVariant", colorVariant);
+              // @ts-ignore
+              if (colorVariant && Array.isArray(colorVariant.sizes)) {
+                // @ts-ignore
+                const sizeVariant = (colorVariant.sizes as any[]).find(
+                  (size: any) => size.size === cartProduct.size
+                );
+                console.log("sizeVariant", sizeVariant);
+
+                if (sizeVariant) {
+                  const stockFieldPath = `variants.$[colorVariant].sizes.$[sizeVariant].stock`;
+                  const stockToRefresh = Number(sizeVariant.stock);
+                  console.log(stockToRefresh);
+
+                  // Actualizar el stock del producto
+                  await ProductModel.findByIdAndUpdate(
+                    cartProduct?.product_id?._id,
+                    {
+                      $set: {
+                        [stockFieldPath]:
+                          sizeVariant.stock + cartProduct.quantity,
+                      },
+                    },
+                    {
+                      new: true,
+                      arrayFilters: [
+                        { "colorVariant.color": cartProduct.color },
+                        { "sizeVariant.size": cartProduct.size },
+                      ],
+                    }
+                  );
+                } else {
+                  console.log(
+                    `El tamaño '${cartProduct.size}' no existe para el color '${cartProduct.color}' en el producto con ID '${cartProduct.product_id._id}'.`
+                  );
+                }
+              }
+            } else if (!product.hasSize) {
+              if (colorVariant) {
+                console.log("color variant,", colorVariant);
+                console.log("else if");
+                const stockFieldPath = `variants.$[colorVariant].stock`;
+
+                // Actualizar el stock del producto
+                await ProductModel.findByIdAndUpdate(
+                  cartProduct?.product_id?.length > 0
+                    ? cartProduct?.product_id
+                    : cartProduct?.product_id?._id,
+                  {
+                    $set: {
+                      [stockFieldPath]:
+                        colorVariant.stock + cartProduct.quantity,
+                    },
+                  },
+                  {
+                    new: true,
+                    arrayFilters: [{ "colorVariant.color": cartProduct.color }],
+                  }
+                );
+              }
+            }
+          }
+        })
+      );
       const updatedShopCart = await ShopCartModel.findByIdAndUpdate(
         shopcart_id,
         { status },
         { new: true }
-      );
-
-      await Promise.all(
-        shopCartProducts.map(async (productCart: any) => {
-          const updatedProduct = await ProductModel.findByIdAndUpdate(
-            productCart.product_id,
-            { $inc: { stock: productCart.quantity } }
-          );
-          return updatedProduct;
-        })
       );
       res.status(200).send(updatedShopCart);
     }

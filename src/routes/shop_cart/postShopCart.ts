@@ -2,6 +2,7 @@ import { Router } from "express";
 import { ShopCartInterface } from "../../interfaces/shop_cart.interface";
 import ShopCartModel from "../../models/shop_cart.schema";
 import ProductModel from "../../models/product.schema";
+import { ProductInterface } from "../../interfaces/product.interface";
 
 const router = Router();
 
@@ -16,10 +17,12 @@ router.post("/", async (req, res) => {
       customer_phone,
       status,
     }: ShopCartInterface = req.body;
-    
+
     const created_at = new Date().toLocaleString("es-AR", {
       timeZone: "America/Argentina/Buenos_Aires",
     });
+
+    console.log(items);
 
     const newShopCart = new ShopCartModel({
       amount,
@@ -32,17 +35,93 @@ router.post("/", async (req, res) => {
       customer_phone,
     });
 
-
     // fetch one by one req.body.items to update product stock
     await Promise.all(
       items.map(async (shopCartProduct: any) => {
-        const stockToRefresh = shopCartProduct.quantity;
-
-        await ProductModel.findByIdAndUpdate(
-          shopCartProduct.product_id,
-          { $inc: { stock: -stockToRefresh } },
-          { new: true } // Para devolver el documento actualizado
+        // Obtener el producto de la base de datos
+        const product: ProductInterface | null = await ProductModel.findById(
+          shopCartProduct.product_id
         );
+
+        if (product) {
+          // Determinar si el producto tiene tallas (sizes) o no
+          if (product.hasSize && product.variants.length) {
+            const colorVariant = (product.variants as any[]).find(
+              (variant: any) =>
+                variant.color.toLowerCase() ===
+                shopCartProduct.color.toLowerCase()
+            );
+
+            console.log("colorVariant", colorVariant);
+            // @ts-ignore
+            if (colorVariant && Array.isArray(colorVariant.sizes)) {
+              // @ts-ignore
+              const sizeVariant = (colorVariant.sizes as any[]).find(
+                (size: any) => size.size === shopCartProduct.size
+              );
+              console.log("sizeVariant", sizeVariant);
+
+              if (sizeVariant) {
+                const stockFieldPath = `variants.$[colorVariant].sizes.$[sizeVariant].stock`;
+                const stockToRefresh = Number(sizeVariant.stock);
+                console.log(stockToRefresh);
+
+                // Actualizar el stock del producto
+                await ProductModel.findByIdAndUpdate(
+                  shopCartProduct.product_id,
+                  {
+                    $set: {
+                      [stockFieldPath]: sizeVariant.stock - stockToRefresh,
+                    },
+                  },
+                  {
+                    new: true,
+                    arrayFilters: [
+                      { "colorVariant.color": shopCartProduct.color },
+                      { "sizeVariant.size": shopCartProduct.size },
+                    ],
+                  }
+                );
+              } else {
+                console.log(
+                  `El tamaño '${shopCartProduct.size}' no existe para el color '${shopCartProduct.color}' en el producto con ID '${shopCartProduct.product_id}'.`
+                );
+              }
+            }
+          } else if (!product.hasSize) {
+            const colorVariant = (product.variants as any[]).find(
+              (variant: any) =>
+                variant.color.toLowerCase() ===
+                shopCartProduct.color.toLowerCase()
+            );
+
+            if (colorVariant) {
+              const stockFieldPath = `variants.$[colorVariant].stock`;
+              // @ts-ignore
+              const stockToRefresh = Number(colorVariant.stock);
+
+              // Actualizar el stock del producto
+              await ProductModel.findByIdAndUpdate(
+                shopCartProduct.product_id,
+                {
+                  $set: {
+                    [stockFieldPath]: colorVariant.stock - stockToRefresh,
+                  },
+                },
+                {
+                  new: true,
+                  arrayFilters: [
+                    { "colorVariant.color": shopCartProduct.color },
+                  ],
+                }
+              );
+            }
+          }
+        } else {
+          console.log(
+            `No se encontró el producto con ID '${shopCartProduct.product_id}'.`
+          );
+        }
       })
     );
 

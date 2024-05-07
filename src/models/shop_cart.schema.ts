@@ -50,12 +50,20 @@ const shopCartSchema = new Schema<ShopCartInterface>({
     {
       product_id: {
         type: Schema.Types.ObjectId, // Tipo ObjectId para referencia al modelo Product
-        ref: 'Product', // Referencia al modelo Product
+        ref: "Product", // Referencia al modelo Product
         required: [true, "item ID is required"],
       },
       quantity: {
         type: Number,
         required: [true, "item quantity is required"],
+      },
+      color: {
+        type: String,
+        required: false,
+      },
+      size: {
+        type: String,
+        required: false,
       },
     },
   ],

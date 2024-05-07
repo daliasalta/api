@@ -4,20 +4,27 @@ import ProductModel from "../../models/product.schema";
 const router = Router();
 
 router.patch("/:product_id", async (req, res) => {
+  console.log("bodyyyyyyyyy", req.body);
   try {
     const productId = req.params.product_id; // Obtén el ID del producto a actualizar desde la URL
 
     // Obtén los datos que se enviarán en el cuerpo de la solicitud (req.body)
     const updatedProductData = req.body;
-    console.log(updatedProductData)
+    console.log(updatedProductData);
     // Realiza la actualización del producto en la base de datos utilizando Mongoose
-    const updatedProduct = await ProductModel.findByIdAndUpdate(productId, updatedProductData, {
-      new: true, // Esto devuelve el documento actualizado en la respuesta
-    });
+    const updatedProduct = await ProductModel.findByIdAndUpdate(
+      productId,
+      updatedProductData,
+      {
+        new: true, // Esto devuelve el documento actualizado en la respuesta
+      }
+    );
 
     if (!updatedProduct) {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
+
+    console.log(updatedProduct);
 
     res.status(200).json(updatedProduct);
   } catch (error) {

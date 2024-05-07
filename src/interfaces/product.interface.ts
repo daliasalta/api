@@ -7,8 +7,33 @@ export interface ProductInterface extends Document {
   discount_price: number;
   purchase_price?: number;
   description: string;
-  stock: number;
   isFeatured: boolean;
-  img: string;
+  hasSize: boolean;
+  hasManyColors: boolean;
   categories: CategoryInterface;
+  variants: ProductVariantWithSizes[] | ProductVariantWithoutSizes[];
 }
+
+export type ProductVariantWithSizes = {
+  sizes: [{ size: number; stock: number }];
+  color: string;
+  images: [
+    {
+      main: string;
+      secondary?: string;
+      terciary?: string;
+    }
+  ];
+};
+
+export type ProductVariantWithoutSizes = {
+  stock: number;
+  color: string;
+  images: [
+    {
+      main: string;
+      secondary?: string;
+      terciary?: string;
+    }
+  ];
+};

@@ -7,7 +7,7 @@ router.get("/", async (_req, res) => {
   try {
     const products = await ProductModel.find({
       isFeatured: true,
-      stock: { $gt: 0 },
+      // stock: { $gt: 0 },
     });
     res.status(200).json(products);
   } catch (error) {

@@ -6,7 +6,8 @@ const router = Router();
 router.get("/:limit?", async (req, res) => {
   try {
     let limitValue = req.params.limit;
-    let query = ProductModel.find({ stock: { $gt: 0 } }).sort({ _id: -1 }); // Ordena en orden descendente por el campo _id
+    // let query = ProductModel.find({ stock: { $gt: 0 } }).sort({ _id: -1 }); // Ordena en orden descendente por el campo _id
+    let query = ProductModel.find().sort({ _id: -1 }); // Ordena en orden descendente por el campo _id
 
     if (limitValue) {
       query = query.limit(parseInt(limitValue, 10));

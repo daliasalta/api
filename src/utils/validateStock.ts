@@ -16,3 +16,21 @@ export const validateStock = (availableStock: any, requiredProducts: any) => {
 
   return missingProductStock;
 };
+
+export const validateStockShopCart = (cartItems: any) => {
+  let missingProductStock: any = [];
+
+  // console.log("itemssssssssssssssssss", cartItems);
+
+  for (let i = 0; i < cartItems.length; i++) {
+    console.log(cartItems);
+    if (
+      cartItems[i].product_stock < cartItems[i].customer_required_stock ||
+      cartItems[i].product_stock === 0
+    ) {
+      missingProductStock.push(cartItems[i]);
+    }
+  }
+  console.log(missingProductStock);
+  return missingProductStock;
+};

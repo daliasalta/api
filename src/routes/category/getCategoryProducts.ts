@@ -24,11 +24,11 @@ router.get("/:category_name", async (req, res) => {
 
     const products = await ProductModel.find({
       categories: { $in: [category._id] },
-      stock: { $gt: 0 },
+      // stock: { $gt: 0 },
     })
       .populate({
         path: "categories",
-        model: "Category", // Modelo de la categoría
+        model: "Category",
       })
       .exec();
 
