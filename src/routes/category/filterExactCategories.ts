@@ -16,7 +16,8 @@ router.get("/", async (req, res) => {
       category?.toLowerCase().trim()
     );
 
-    const productos = await ProductModel.find({ stock: { $gt: 0 } }).populate({
+    // const productos = await ProductModel.find({ stock: { $gt: 0 } }).populate({
+    const productos = await ProductModel.find().populate({
       path: "categories",
     });
 
