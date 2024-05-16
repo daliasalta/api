@@ -52,14 +52,10 @@ router.post("/", async (req, res) => {
                 shopCartProduct.color.toLowerCase()
             );
 
-            console.log("colorVariant", colorVariant);
-            // @ts-ignore
             if (colorVariant && Array.isArray(colorVariant.sizes)) {
-              // @ts-ignore
               const sizeVariant = (colorVariant.sizes as any[]).find(
                 (size: any) => size.size === shopCartProduct.size
               );
-              console.log("sizeVariant", sizeVariant);
 
               if (sizeVariant) {
                 const stockFieldPath = `variants.$[colorVariant].sizes.$[sizeVariant].stock`;
@@ -71,7 +67,8 @@ router.post("/", async (req, res) => {
                   shopCartProduct.product_id,
                   {
                     $set: {
-                      [stockFieldPath]: sizeVariant.stock - stockToRefresh,
+                      [stockFieldPath]:
+                        sizeVariant.stock - shopCartProduct.quantity,
                     },
                   },
                   {
