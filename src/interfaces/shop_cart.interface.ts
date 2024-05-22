@@ -20,9 +20,15 @@ export type ShopCartItemsType = {
   quantity: number;
 };
 
+export type CouponType = {
+  discount_amount: number;
+  coupon_code: string;
+};
+
 export interface ShopCartInterface {
   order_number: number;
   amount: number;
+  coupon?: CouponType;
   shipping: ShippingType;
   payment_method: string;
   items: ShopCartItemsType[];
@@ -30,4 +36,6 @@ export interface ShopCartInterface {
   status: ShopCartStatus;
   customer_name: string;
   customer_phone: number;
+  customer_email: string;
+  customer_dni: number;
 }

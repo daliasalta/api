@@ -2,9 +2,24 @@ import { Schema, model } from "mongoose";
 import { ShopCartInterface } from "../interfaces/shop_cart.interface";
 
 const shopCartSchema = new Schema<ShopCartInterface>({
+  order_number: {
+    type: Number,
+  },
   amount: {
     type: Number,
     required: [true, "amount is required"],
+  },
+  coupon: {
+    type: {
+      discount_amount: {
+        type: Number,
+        required: [false],
+      },
+      coupon_code: {
+        type: String,
+        required: [false],
+      },
+    },
   },
   shipping: {
     type: {
@@ -81,6 +96,14 @@ const shopCartSchema = new Schema<ShopCartInterface>({
   customer_phone: {
     type: Number,
     required: [true, "customer_phone is required"],
+  },
+  customer_email: {
+    type: String,
+    required: [true, "email is required"],
+  },
+  customer_dni: {
+    type: Number,
+    required: [true, "dni is required"],
   },
 });
 

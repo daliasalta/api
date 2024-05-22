@@ -10,11 +10,14 @@ router.post("/", async (req, res) => {
   try {
     const {
       amount,
+      coupon,
       shipping,
       payment_method,
       items,
       customer_name,
       customer_phone,
+      customer_dni,
+      customer_email,
       status,
     }: ShopCartInterface = req.body;
 
@@ -22,10 +25,13 @@ router.post("/", async (req, res) => {
       timeZone: "America/Argentina/Buenos_Aires",
     });
 
-    console.log(items);
+    const allShopCarts = await ShopCartModel.find();
+    const orderNumber = allShopCarts.length + 1;
 
     const newShopCart = new ShopCartModel({
+      order_number: orderNumber,
       amount,
+      coupon,
       shipping,
       payment_method,
       items,
@@ -33,6 +39,8 @@ router.post("/", async (req, res) => {
       status,
       customer_name,
       customer_phone,
+      customer_dni,
+      customer_email,
     });
 
     // fetch one by one req.body.items to update product stock
@@ -123,8 +131,16 @@ router.post("/", async (req, res) => {
     );
 
     // save shopcart in database
+    // Guarda el nuevo shopCart en la base de datos
     const savedShopCart = await newShopCart.save();
-    res.status(201).json(savedShopCart);
+
+    // Popula el campo product_id en cada elemento del array items
+    const populatedShopCart = await ShopCartModel.findById(
+      savedShopCart._id
+    ).populate("items.product_id");
+
+    console.log(populatedShopCart);
+    res.status(201).json(populatedShopCart);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error interno del servidor" });
