@@ -26,7 +26,11 @@ router.post("/", async (req, res) => {
     });
 
     const allShopCarts = await ShopCartModel.find();
-    const orderNumber = allShopCarts.length + 1;
+    let orderNumber = allShopCarts.length + 1;
+
+    if(allShopCarts[allShopCarts.length - 1].order_number === orderNumber) {
+      orderNumber++
+    }
 
     const newShopCart = new ShopCartModel({
       order_number: orderNumber,
