@@ -16,7 +16,8 @@ router.get("/", async (req, res) => {
         .json({ error: "Falta el parámetro product en la URL" });
     }
 
-    const products = await ProductModel.find({ stock: { $gt: 0 } });
+    // const products = await ProductModel.find({ stock: { $gt: 0 } });
+    const products = await ProductModel.find();
     const similarProducts = getProductByQuery(products, queryValue);
 
     if (similarProducts.length === 0) {

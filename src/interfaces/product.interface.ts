@@ -9,7 +9,7 @@ export interface ProductInterface extends Document {
   description: string;
   isFeatured: boolean;
   hasSize: boolean;
-  hasManyColors: boolean;
+  hasColors: boolean;
   categories: CategoryInterface;
   variants: ProductVariantWithSizes[] | ProductVariantWithoutSizes[];
 }

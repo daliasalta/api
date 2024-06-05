@@ -45,7 +45,7 @@ const productSchema = new Schema<ProductInterface>(
     description: { type: String, required: [true, "description is required"] },
     isFeatured: { type: Boolean },
     hasSize: { type: Boolean },
-    hasManyColors: { type: Boolean },
+    hasColors: {type: Boolean},
     categories: [
       {
         type: Schema.Types.ObjectId,

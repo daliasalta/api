@@ -8,7 +8,7 @@ router.get("/", async (req, res) => {
   try {
     const productsWithDiscount: ProductInterface[] = await ProductModel.find({
       discount_price: { $gt: 0 },
-      stock: { $gt: 0 },
+      // stock: { $gt: 0 },
     });
 
     if (productsWithDiscount.length) {
