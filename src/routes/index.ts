@@ -31,6 +31,7 @@ import getShippingMethods from "./shipping/getShippingMethods";
 import postShippingMethod from "./shipping/postShippingMethod";
 import patchShippingMethod from "./shipping/patchShippingMethod";
 import deleteShippingMethod from "./shipping/deleteShippingMethod";
+import getShopCartByOrderNumber from "./shop_cart/getShopCartByOrderNumber";
 
 const router = Router();
 
@@ -63,6 +64,7 @@ router.use("/get-shopcarts", getShopCarts);
 router.use("/post-shopcart", postShopCart);
 router.use("/get-shopcart", getShopCartById);
 router.use("/patch-shopcart", patchShopCart);
+router.use("/get-by-oder-number", getShopCartByOrderNumber);
 
 // CLOUDINARY
 router.use("/upload-image", postImage);

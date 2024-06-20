@@ -3,7 +3,8 @@ export type ShopCartStatus = "not_paid" | "expired" | "paid" | "delivered";
 export type ShippingCustomerInfoType = {
   street_neighborhood: string;
   number: number;
-  apartment: number;
+  apartment: string;
+  floor: number
   city: string;
   zip_code: number;
   state: string;

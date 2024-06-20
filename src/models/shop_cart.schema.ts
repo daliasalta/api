@@ -40,6 +40,9 @@ const shopCartSchema = new Schema<ShopCartInterface>({
             type: Number,
           },
           apartment: {
+            type: String,
+          },
+          floor: {
             type: Number,
           },
           city: {
