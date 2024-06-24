@@ -64,7 +64,7 @@ router.use("/get-shopcarts", getShopCarts);
 router.use("/post-shopcart", postShopCart);
 router.use("/get-shopcart", getShopCartById);
 router.use("/patch-shopcart", patchShopCart);
-router.use("/get-by-oder-number", getShopCartByOrderNumber);
+router.use("/get-by-order-number", getShopCartByOrderNumber);
 
 // CLOUDINARY
 router.use("/upload-image", postImage);
