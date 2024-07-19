@@ -3,6 +3,7 @@ import { ShopCartInterface } from "../../interfaces/shop_cart.interface";
 import ShopCartModel from "../../models/shop_cart.schema";
 import ProductModel from "../../models/product.schema";
 import { ProductInterface } from "../../interfaces/product.interface";
+import CustomerModel from "../../models/customer.schema";
 
 const router = Router();
 
@@ -130,8 +131,28 @@ router.post("/", async (req, res) => {
       })
     );
 
+    const customer = await CustomerModel.findOne({ email: customer_email });
+
+    const customerToCreateOrUpdate = {
+      full_name: customer_name,
+      phone_number: customer_phone,
+      email: customer_email,
+      shipping_info: shipping.shipping_customer_info,
+      orders: [orderNumber],
+    };
+
+    if (customer === null) {
+      const newCustomer = await new CustomerModel(customerToCreateOrUpdate);
+
+      await newCustomer.save();
+    } else {
+      await CustomerModel.findByIdAndUpdate(
+        customer._id,
+        { $push: { orders: orderNumber } },
+        { new: true }
+      );
+    }
     // save shopcart in database
-    // Guarda el nuevo shopCart en la base de datos
     const savedShopCart = await newShopCart.save();
 
     // Popula el campo product_id en cada elemento del array items

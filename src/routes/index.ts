@@ -32,6 +32,8 @@ import postShippingMethod from "./shipping/postShippingMethod";
 import patchShippingMethod from "./shipping/patchShippingMethod";
 import deleteShippingMethod from "./shipping/deleteShippingMethod";
 import getShopCartByOrderNumber from "./shop_cart/getShopCartByOrderNumber";
+import postCustomer from "./customers/postCustomer"
+import getCustomers from "./customers/getCustomers"
 
 const router = Router();
 
@@ -81,5 +83,9 @@ router.use("/coupon-validate", validateCoupon);
 
 // DOLLAR PRICE
 router.use("/post-dollar-price", postDollarPrice);
+
+// CUSTOMER
+router.use("/post-customer", postCustomer)
+router.use("/get-customers", getCustomers)
 
 export default router;
