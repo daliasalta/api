@@ -14,6 +14,7 @@ router.post("/", async (req, res) => {
       isFeatured,
       description,
       hasSize,
+      hasColors,
       categories,
       variants,
     } = req.body;
@@ -40,6 +41,7 @@ router.post("/", async (req, res) => {
       isFeatured,
       description,
       hasSize,
+      hasColors,
       categories: categoryDetails,
       variants,
     });
